@@ -31,6 +31,10 @@
 # Operating System Files
 # =========================
 
+#忽略libcds的源文件
+libs/*
+scripts/*
+
 # OSX
 # =========================
 
