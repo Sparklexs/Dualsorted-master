@@ -1,7 +1,6 @@
-
-# CPPFLAGS=-g3 -Wall -O0
+ CPPFLAGS=-g3 -Wall -O0
 #-DVERBOSE
-CPPFLAGS=-O9 -Wall -DNDEBUG
+#CPPFLAGS=-O9 -Wall -DNDEBUG
 
 all:  tests
 
@@ -14,8 +13,8 @@ libcompact:
 	@CPPFLAGS="$(CPPFLAGS)" make --no-print-directory -C src
 
 tests: libcompact
-	@echo " [MSG] Entering directory tests"
-	@CPPFLAGS="$(CPPFLAGS)" make --no-print-directory -C tests
+#	@echo " [MSG] Entering directory tests"
+#	@CPPFLAGS="$(CPPFLAGS)" make --no-print-directory -C tests
 
 clean:
 	@echo " [MSG] Entering directory src"

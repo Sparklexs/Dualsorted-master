@@ -63,14 +63,14 @@ public:
 	//TODO
 	vector<pair<uint, size_t> > mrqq(string term, size_t k, size_t kp);
 
-	//获取给定term对应的那部分倒排链中x到y所对应的docid
+	//获取给定term对应的那部分倒排链中x到y，起点从0开始，所对应的docid
 	vector<uint> range(string t, size_t x, size_t y);
 
 	//FIXME 应该是给定qsizes个查询词，得到其倒排链相交的结果
 	//但该函数并没有返回值
 	void intersect(string *terms, uint qsizes);
 
-	//返回给定term对应的倒排链从起始位置到i对应的docid序列
+	//返回给定term对应的倒排链从起始位置到i，起点从0开始，对应的docid序列
 	vector<uint> getRange(string term, uint i);
 
 	// others

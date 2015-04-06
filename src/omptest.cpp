@@ -43,7 +43,7 @@ Dualsorted* ReadFiles(char** argv) {
 	docfile.open(invlist);
 	vector<vector<int> > result;
 	vector<string> strs;
-	int times = 1;
+//	int times = 1;
 	while (docfile.good()) {
 		vector<int> r;
 		getline(docfile, line);
@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
 //			string("song"));
 
 //测试DualSorted类
-	Dualsorted* ds=ReadFiles(argv);
+	Dualsorted* ds = ReadFiles(argv);
 	ds->DStest();
 
 //	omp_set_num_threads(10);

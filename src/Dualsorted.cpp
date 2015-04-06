@@ -163,12 +163,13 @@ vector<uint> Dualsorted::range(string term, size_t x, size_t y) {
 	//cout << "Executing select" << endl;
 	// cout << "f = " << f << endl;
 
-	//FIXME 仅限于32位
+	//FIXME 仅限于32位，并没有考虑x和y超过term的倒排链范围
 //	if (f == -1 || f == 0 || f > 4294967290) {
 //		vector<uint> blank;
 //		return blank;
 //	}
 	size_t start = this->st->select1(f + 1);
+
 	return this->L->range_report_aux(start + x, start + y);
 }
 
@@ -334,33 +335,44 @@ void Dualsorted::DStest() {
 
 	cout << "Test Begin!" << endl;
 
-	cout << "Testing getTermPosition" << endl;
 	google::sparse_hash_map<string, uint>::iterator it = terms.begin();
-	for (; it != terms.end(); it++) {
-		cout << (*it).first << ":" << this->getTermPosition((*it).first.c_str())
-				<< endl;
-	}
 
-	cout << "Testing getPostingSize" << endl;
-	it = terms.begin();
-	for (; it != terms.end(); it++) {
-		uint postLength = this->getPostingSize((*it).first);
-		cout << (*it).first << ":" << postLength << endl;
-		for (uint i = 0; i < postLength; i++) {
-			cout << this->getFreq((*it).first.c_str(), i) << endl;
-		}
-	}
+//	cout << "Testing getTermPosition" << endl;
+//	for (; it != terms.end(); it++) {
+//		cout << (*it).first << ":" << this->getTermPosition((*it).first.c_str())
+//				<< endl;
+//	}
+
+//	cout << "Testing getPostingSize" << endl;
+//	it = terms.begin();
+//	for (; it != terms.end(); it++) {
+//		uint postLength = this->getPostingSize((*it).first);
+//		cout << (*it).first << ":" << postLength << endl;
+//		for (uint i = 0; i < postLength; i++) {
+//			cout << this->getFreq((*it).first.c_str(), i) << endl;
+//		}
+//	}
 	cout << "Testing getPostTerm" << endl;
+
+	cout << "getLength:" << this->L->getLength() << endl;
+//for(int i=0;i<100;i++)
+//		{cout<<this->L->access(i)<<endl;
+//	cout <<this->L->select(1,i)<< endl;}
+
+	cout << this->L->rank(1, 1) << endl;
+	cout << this->L->rank(12, 20) << endl;
+
 	it = terms.begin();
 	for (; it != terms.end(); it++) {
 		uint postLength = this->getPostingSize((*it).first);
-		cout << (*it).first << ":" << postLength << endl;
+//		cout << (*it).first << ":" << postLength << endl;
 		if ((*it).second == 0) {
-			cout << this->getPosTerm((*it).first, 78) << endl;
-			cout << this->getPosTerm((*it).first, 21) << endl;
-			cout << this->getPosTerm((*it).first, 79) << endl;
+			//cout << this->getPosTerm((*it).first, 78) << endl;
+			//cout << this->getPosTerm((*it).first, 21) << endl;
+			//cout << this->getPosTerm((*it).first, 79) << endl;
 
-			vector<uint> ranges = this->range((*it).first, 0, 10);
+//			vector<uint> ranges = this->range((*it).first, 0, postLength-1);
+			vector<uint> ranges = this->getRange((*it).first, 16);
 			for (int i = 0; i < ranges.size(); i++)
 				cout << ranges[i] << endl;
 		}
@@ -374,6 +386,7 @@ void Dualsorted::DStest() {
 	cout << this->getSize() << endl;
 
 	cout << "Testing intersect" << endl;
+
 //	string* queries=""
 //cout << this->intersect() << endl;
 	/*	cout << "testing st.... " << endl;
