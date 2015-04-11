@@ -63,7 +63,7 @@ Dualsorted::Dualsorted(vector<string> vocab, vector<vector<int> > &result,
 }
 
 // Fix this
-size_t Dualsorted::getSize() {
+size_t Dualsorted::getMemSize() {
 	size_t size = 0;
 	long double size_ps = 0;
 
@@ -87,17 +87,18 @@ size_t Dualsorted::getSize() {
 	return size;
 }
 
-//uint Dualsorted::getDocid(string term, uint i) {
-//	uint f = this->getTermPosition(term.c_str());
-//	uint end, start;
-//	(f != this->size_terms - 1) ?
-//			end = this->st->select1(f + 2) - 1 : end = this->L_size - 1;
-//	start = this->st->select1(f + 1);
-//	return this->L->range(start, end, i);
-//}
+uint Dualsorted::getDocidOfPosting(string term, uint i) {
+	uint f = this->getTermID(term.c_str());
+	uint end, start;
+	(f != this->size_terms - 1) ?
+			end = this->st->select1(f + 2) - 1 : end = this->L_size - 1;
+	start = this->st->select1(f + 1);
+	return this->L->access(start + i);
+//	return this->L->rangeFromTo(start, end, i);
+}
 
-int Dualsorted::getPosTerm(string t, uint d) {
-	uint f = this->getTermPosition(t.c_str());
+int Dualsorted::getPosOfDoc(string t, uint d) {
+	uint f = this->getTermID(t.c_str());
 
 	//if (f == 0)
 	//return 0; // FIXME 为什么0就要退出，已修正
@@ -118,7 +119,7 @@ int Dualsorted::getPosTerm(string t, uint d) {
 	//return this->L->select(d, 1 + this->L->rank(d, start - 1)) - start;
 }
 uint Dualsorted::getPostingSize(string term) {
-	uint f = this->getTermPosition(term.c_str());
+	uint f = this->getTermID(term.c_str());
 	if (f == -1)
 		return 0;
 	size_t end, start;
@@ -128,8 +129,8 @@ uint Dualsorted::getPostingSize(string term) {
 	return end - start + 1;
 }
 
-int Dualsorted::getFreq(const char* term, int i) {
-	uint j = this->getTermPosition(term);
+int Dualsorted::getFreqOfPosting(const char* term, int i) {
+	uint j = this->getTermID(term);
 	if (j >= 0)
 		return this->ps[j]->decode(i);
 	else
@@ -149,7 +150,7 @@ int Dualsorted::getFreq(const char* term, int i) {
 //	return 0;
 }
 
-uint Dualsorted::getTermPosition(const char *t) {
+uint Dualsorted::getTermID(const char *t) {
 	//return search(this->terms,t,this->size_terms);
 	//cout << "received = " << t << endl;
 	string a(t);
@@ -157,9 +158,9 @@ uint Dualsorted::getTermPosition(const char *t) {
 	return this->terms[a];
 }
 
-vector<uint> Dualsorted::range(string term, size_t x, size_t y) {
+vector<uint> Dualsorted::rangeFromTo(string term, size_t x, size_t y) {
 	//cout << "searching for: " << term << endl;
-	uint f = this->getTermPosition(term.c_str());
+	uint f = this->getTermID(term.c_str());
 	//cout << "Executing select" << endl;
 	// cout << "f = " << f << endl;
 
@@ -173,8 +174,8 @@ vector<uint> Dualsorted::range(string term, size_t x, size_t y) {
 	return this->L->range_report_aux(start + x, start + y);
 }
 
-vector<uint> Dualsorted::getRange(string term, uint i) {
-	uint f = this->getTermPosition(term.c_str());
+vector<uint> Dualsorted::rangeTo(string term, uint i) {
+	uint f = this->getTermID(term.c_str());
 	cout << "f = " << f << endl;
 	size_t end, start;
 	(f != this->size_terms - 1) ?
@@ -197,16 +198,17 @@ vector<uint> Dualsorted::getRange(string term, uint i) {
 	}
 }
 
-inline void Dualsorted::intersect(string *terms, uint qsizes) {
+inline vector<uint> Dualsorted::intersect(string *terms, uint qsizes) {
 	//cout << "BLABLA" << endl;
 	size_t *start = new size_t[qsizes];
 	size_t *end = new size_t[qsizes];
 	for (uint i = 0; i < qsizes; i++) {
-		uint f = this->getTermPosition(terms[i].c_str());
-		if (f == 0)
-			return;
-//		cout << "term = " << terms[i] << endl;
-//		cout << "pos = " << f << endl;
+		uint f = this->getTermID(terms[i].c_str());
+		//XXX 没必要等于0时退出 ,已修正
+//		if (f == 0)
+//			return;
+		cout << "term = " << terms[i] << endl;
+		cout << "pos = " << f << endl;
 
 		start[i] = this->st->select1(f + 1);
 		if (f != this->size_terms - 1)
@@ -221,11 +223,11 @@ inline void Dualsorted::intersect(string *terms, uint qsizes) {
 	//size_t x_start,size_t x_end,size_t y_start, size_t y_end)
 	//this->L->range_report_aux(start[0],end[0]);
 	//this->L->range_intersect_aux(start[0],end[0],start[1],end[1]);
-	this->L->n_range_intersect_aux(start, end, qsizes);
+	return this->L->n_range_intersect_aux(start, end, qsizes);
 }
 /*vector < pair<uint,size_t> > Dualsorted::mrqq(string term, size_t k, size_t kp)
  {
- uint f = this->getTermPosition(term.c_str());
+ uint f = this->getTermID(term.c_str());
  uint end,start;
  (f != this->size_terms-1) ? end = this->st->select1(f+2)-1 : end = this->L_size-1;
  start = this->st->select1(f+1);
@@ -333,13 +335,15 @@ Sequence * Dualsorted::buildL() {
 
 void Dualsorted::DStest() {
 
-	cout << "Test Begin!" << endl;
+//	const char*s = "19";
+//	cout << this->st->select1(this->getTermID(s) + 1) << endl;
 
+	cout << "Test Begin!" << endl;
 	google::sparse_hash_map<string, uint>::iterator it = terms.begin();
 
-//	cout << "Testing getTermPosition" << endl;
+//	cout << "Testing getTermID" << endl;
 //	for (; it != terms.end(); it++) {
-//		cout << (*it).first << ":" << this->getTermPosition((*it).first.c_str())
+//		cout << (*it).first << ":" << this->getTermID((*it).first.c_str())
 //				<< endl;
 //	}
 
@@ -349,7 +353,7 @@ void Dualsorted::DStest() {
 //		uint postLength = this->getPostingSize((*it).first);
 //		cout << (*it).first << ":" << postLength << endl;
 //		for (uint i = 0; i < postLength; i++) {
-//			cout << this->getFreq((*it).first.c_str(), i) << endl;
+//			cout << this->getFreqOfPosting((*it).first.c_str(), i) << endl;
 //		}
 //	}
 	cout << "Testing getPostTerm" << endl;
@@ -367,25 +371,37 @@ void Dualsorted::DStest() {
 		uint postLength = this->getPostingSize((*it).first);
 //		cout << (*it).first << ":" << postLength << endl;
 		if ((*it).second == 0) {
-			//cout << this->getPosTerm((*it).first, 78) << endl;
-			//cout << this->getPosTerm((*it).first, 21) << endl;
-			//cout << this->getPosTerm((*it).first, 79) << endl;
+			//cout << this->getPosOfDoc((*it).first, 78) << endl;
+			//cout << this->getPosOfDoc((*it).first, 21) << endl;
+			//cout << this->getPosOfDoc((*it).first, 79) << endl;
 
-//			vector<uint> ranges = this->range((*it).first, 0, postLength-1);
-			vector<uint> ranges = this->getRange((*it).first, 16);
+			//vector<uint> ranges = this->rangeFromTo((*it).first, 0, postLength-1);
+			vector<uint> ranges = this->rangeTo((*it).first, 16);
 			for (int i = 0; i < ranges.size(); i++)
 				cout << ranges[i] << endl;
 		}
 //		for (uint i = 0; i < postLength; i++) {
-//			cout << this->getPosTerm((*it).first, 78) << endl;
-		//cout << this->getFreq((*it).first.c_str(), i) << endl;
+//			cout << this->getPosOfDoc((*it).first, 78) << endl;
+		//cout << this->getFreqOfPosting((*it).first.c_str(), i) << endl;
 //	}
 	}
 
 	cout << "Testing getSize" << endl;
-	cout << this->getSize() << endl;
+	cout << this->getMemSize() << endl;
 
 	cout << "Testing intersect" << endl;
+	string* strs = new string[3]; /*= malloc(sizeof(string));*/
+	strs[0] = "1";
+	strs[1] = "10";
+	strs[2] = "006";
+//	it = terms.begin();
+//	for (int i = 0; i < 2; i++) {
+//		*(strs + i) = (*it).first;
+//		it++;
+//	}
+	vector<uint> r = this->intersect(strs, 3);
+	for (int i = 0; i < r.size(); i++)
+		cout << r[i] << endl;
 
 //	string* queries=""
 //cout << this->intersect() << endl;

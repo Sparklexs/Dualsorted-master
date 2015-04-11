@@ -31,9 +31,12 @@
 # Operating System Files
 # =========================
 
-#ºöÂÔlibcdsµÄÔ´ÎÄ¼þ
-libs/*
-scripts/*
+#ï¿½ï¿½ï¿½ï¿½libcdsï¿½ï¿½Ô´ï¿½Ä¼ï¿½
+*.dat
+*.xml
+*.txt
+libs/
+scripts/
 
 # OSX
 # =========================
@@ -77,3 +80,5 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+*.dat
+archive.txt

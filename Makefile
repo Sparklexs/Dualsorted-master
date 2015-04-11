@@ -1,11 +1,11 @@
 CPP=g++
-#CPPFLAGS=-g -std=c++0x 
-CPPFLAGS=-g -fopenmp -std=c++0x 
+CPPFLAGS=-g -std=c++0x 
+#CPPFLAGS=-g -fopenmp -std=c++0x 
 #CPPFLAGS=-O9 -std=c++0x
   
 OBJS=basics.o delta.o utils.o partialSums.o parse_invlist.o Dualsorted.o
 LIBCDS=libs/libcds_extended
-LIB=$(LIBCDS)/lib/libcds.a
+LIB=$(LIBCDS)/lib/libcds.a -lboost_serialization
 INCLUDES=-I$(LIBCDS)/includes/
 SRC=src/
 DEBUG=Debug/

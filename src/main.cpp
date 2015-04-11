@@ -45,7 +45,7 @@ inline void executeAND(Dualsorted* ds, string ** terms, uint *qsizes,
 	finish = clock();
 	time = (double(finish) - double(start)) / CLOCKS_PER_SEC;
 	total += time;
-	cout << total << "," << ds->getSize() << endl;
+	cout << total << "," << ds->getMemSize() << endl;
 }
 
 inline void executeOR(Dualsorted* ds, string ** terms, uint *qsizes,
@@ -61,7 +61,7 @@ inline void executeOR(Dualsorted* ds, string ** terms, uint *qsizes,
 			uint posting_size = ds->getPostingSize(terms[i][j].c_str());
 			cout << "term = " << terms[i][j] << endl;
 			cout << "posting_size = " << posting_size << endl;
-			vector<uint> results = ds->getRange(terms[i][j], posting_size);
+			vector<uint> results = ds->rangeTo(terms[i][j], posting_size);
 			cout << "result_sisze =" << results.size() << endl;
 			for (uint x = 0; x < results.size(); x++) {
 
@@ -73,7 +73,7 @@ inline void executeOR(Dualsorted* ds, string ** terms, uint *qsizes,
 	finish = clock();
 	time = (double(finish) - double(start)) / CLOCKS_PER_SEC;
 	total += time;
-	cout << total << "," << ds->getSize() << endl;
+	cout << total << "," << ds->getMemSize() << endl;
 }
 inline void executeANDPersin(Dualsorted* ds, string ** terms, uint *qsizes,
 		uint top_k, size_t total_queries) {
@@ -98,7 +98,7 @@ inline void executeANDPersin(Dualsorted* ds, string ** terms, uint *qsizes,
  ds->intersect(terms[i][j],terms[i][j-1]);
  }
  }
- cout << total*0.20 << "," << ds->getSize() << endl;
+ cout << total*0.20 << "," << ds->getMemSize() << endl;
  }/**/
 
 inline void executePersin(Dualsorted* ds, string ** terms, uint *qsizes,
@@ -126,7 +126,7 @@ inline void executePersin(Dualsorted* ds, string ** terms, uint *qsizes,
 			uint posting_size = ds->getPostingSize(terms[i][j].c_str());
 			if (posting_size < 2)
 				continue;
-			vector<uint> results = ds->getRange(terms[i][j], 20);
+			vector<uint> results = ds->rangeTo(terms[i][j], 20);
 //		cout << "results.size() = " << results.size() << endl;
 			if (posting_size < results.size())
 				break;
@@ -138,7 +138,7 @@ inline void executePersin(Dualsorted* ds, string ** terms, uint *qsizes,
 //			cout << "k = " << k << " ->  " << results[k] << endl;
 //			cout << "term = " << terms[i][j] << endl;		
 				if (k < posting_size - 1) {
-					uint freq = ds->getFreq(terms[i][j].c_str(), k);
+					uint freq = ds->getFreqOfPosting(terms[i][j].c_str(), k);
 					double idf = msb(
 							(ds->doclens[results[k]] - posting_size + 0.5)
 									/ (posting_size + 0.5));
@@ -185,7 +185,7 @@ inline void executePersin(Dualsorted* ds, string ** terms, uint *qsizes,
 
 		delete[] acc;
 	}
-	cout << total << "," << ds->getSize() << endl;
+	cout << total << "," << ds->getMemSize() << endl;
 }
 
 void executeQueries(Dualsorted* ds, const char* queries, int query_type) {

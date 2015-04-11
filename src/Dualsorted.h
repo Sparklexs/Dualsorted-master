@@ -51,11 +51,11 @@ public:
 
 	// Requested function implementations
 
-	//TODO 根据输入的term和该term倒排链内的索引，获取给索引代表的docid
-	uint getDocid(string term, uint i);
+	//根据输入的term和该term倒排链内的索引，获取给索引代表的docid
+	uint getDocidOfPosting(string term, uint i);
 
 	//获取给定term在倒排链第i个doc中的频率
-	int getFreq(const char*, int i);
+	int getFreqOfPosting(const char*, int i);
 
 	//获取给定term的document frequency
 	uint getPostingSize(string term);
@@ -64,25 +64,24 @@ public:
 	vector<pair<uint, size_t> > mrqq(string term, size_t k, size_t kp);
 
 	//获取给定term对应的那部分倒排链中x到y，起点从0开始，所对应的docid
-	vector<uint> range(string t, size_t x, size_t y);
+	vector<uint> rangeFromTo(string t, size_t x, size_t y);
 
-	//FIXME 应该是给定qsizes个查询词，得到其倒排链相交的结果
-	//但该函数并没有返回值
-	void intersect(string *terms, uint qsizes);
+	// 应该是给定qsizes个查询词，得到其倒排链相交的结果
+	vector<uint> intersect(string *terms, uint qsizes);
 
 	//返回给定term对应的倒排链从起始位置到i，起点从0开始，对应的docid序列
-	vector<uint> getRange(string term, uint i);
+	vector<uint> rangeTo(string term, uint i);
 
 	// others
 
 	//获取在给定term对应的倒排链中，docid为d在其中的位置
-	int getPosTerm(string t, uint d);
+	int getPosOfDoc(string t, uint d);
 
 	//获取给定term对应的termID
-	uint getTermPosition(const char *t);
+	uint getTermID(const char *t);
 
 	//获取当前DualSorted占用的内存大小（in B）
-	size_t getSize();
+	size_t getMemSize();
 
 	void DStest();
 };

@@ -50,42 +50,42 @@ uint bits (uint n)
    }
    
 
-        // returns e[p..p+len-1], assuming len <= W
+        // returns e[p..p+len-1], assuming len <= myW
 
 uint bitread (uint *e, uint p, uint len)
 
    { uint answ;
-     e += p/W; p %= W;
+     e += p/myW; p %= myW;
      answ = *e >> p;
-     if (len == W)
-	  { if (p) answ |= (*(e+1)) << (W-p);
+     if (len == myW)
+	  { if (p) answ |= (*(e+1)) << (myW-p);
 	  }
-     else { if (p+len > W) answ |= (*(e+1)) << (W-p);
+     else { if (p+len > myW) answ |= (*(e+1)) << (myW-p);
             answ &= (1<<len)-1;
 	  }
      return answ;
    }
 
 
-  	// writes e[p..p+len-1] = s, len <= W
+  	// writes e[p..p+len-1] = s, len <= myW
 
 void bitwrite (register uint *e, register uint p, 
 	       register uint len, register uint s)
 
-   { e += p/W; p %= W;
-     if (len == W)
+   { e += p/myW; p %= myW;
+     if (len == myW)
 	  { *e |= (*e & ((1<<p)-1)) | (s << p);
             if (!p) return;
             e++;
-            *e = (*e & ~((1<<p)-1)) | (s >> (W-p));
+            *e = (*e & ~((1<<p)-1)) | (s >> (myW-p));
 	  }
-     else { if (p+len <= W)
+     else { if (p+len <= myW)
 	       { *e = (*e & ~(((1<<len)-1)<<p)) | (s << p);
 		 return;
 	       }
 	    *e = (*e & ((1<<p)-1)) | (s << p);
-            e++; len -= W-p;
-            *e = (*e & ~((1<<len)-1)) | (s >> (W-p));
+            e++; len -= myW-p;
+            *e = (*e & ~((1<<len)-1)) | (s >> (myW-p));
 	  }
    }
   	// writes e[p..p+len-1] = 0
@@ -93,15 +93,15 @@ void bitwrite (register uint *e, register uint p,
 void bitzero (register uint *e, register uint p, 
 	       register uint len)
 
-   { e += p/W; p %= W;
-     if (p+len >= W)
+   { e += p/myW; p %= myW;
+     if (p+len >= myW)
 	{ *e &= ~((1<<p)-1);
 	  len -= p;
 	  e++; p = 0;
 	}
-     while (len >= W)
+     while (len >= myW)
 	{ *e++ = 0;
-	  len -= W;
+	  len -= myW;
 	}
      if (len > 0)
 	*e &= ~(((1<<len)-1)<<p);
