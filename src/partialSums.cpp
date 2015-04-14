@@ -1,10 +1,19 @@
 #include "delta.c"
 //#include "rice.h"
 #include <iostream>
+#include<fstream>
 #include <cmath>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/vector.hpp>
 using namespace std;
 
 const int NUM_SIZE = 32;
@@ -22,6 +31,12 @@ typedef uint (*encodef)(uint* output, uint pos, uint value);
 typedef uint (*decodef)(uint* input, uint pos, uint* value);
 
 class Psums {
+private:
+	friend class boost::serialization::access;
+	template<class Archive>
+	void serialize(Archive &ar, const unsigned int version) {
+		ar & BOOST_SERIALIZATION_NVP(real) & BOOST_SERIALIZATION_NVP(pos);
+	}
 public:
 	uint real;
 	int pos;
@@ -30,13 +45,16 @@ public:
 		this->real = 0;
 		this->pos = 0;
 	}
+	Psums(uint _real, uint _pos) {
+		real = _real;
+		pos = _pos;
+	}
 	void setPos(int pos) {
 		this->pos = pos;
 	}
 	void setReal(uint real) {
 		this->real = real;
 	}
-
 };
 
 class CompressedPsums {
@@ -56,8 +74,41 @@ private:
 
 	encodef enc;
 	decodef dec;
+	friend class boost::serialization::access;
+	template<class Archive>
+	void save(Archive& ar, const unsigned int version) const {
+		vector<uint> vdup(duplicate, duplicate + n);
+		vector<uint> vd(d, d + size / NUM_SIZE);
+		vector<Psums> vecs;
+		for (int i = 0; i < new_n / k + 1; i++)
+			vecs.push_back(*(this->s[i]));
+		ar & BOOST_SERIALIZATION_NVP(n) & BOOST_SERIALIZATION_NVP(k)
+		& BOOST_SERIALIZATION_NVP(size) & BOOST_SERIALIZATION_NVP(vdup)
+		& BOOST_SERIALIZATION_NVP(vd) & BOOST_SERIALIZATION_NVP(vecs);
 
-public:
+	}
+	template<class Archive>
+	void load(Archive& ar, const unsigned int version) {
+		vector<uint> vdup;
+		vector<uint> vd;
+		vector<Psums> vecs;
+		ar & BOOST_SERIALIZATION_NVP(n) & BOOST_SERIALIZATION_NVP(k)
+		& BOOST_SERIALIZATION_NVP(size) & BOOST_SERIALIZATION_NVP(vdup)
+		& BOOST_SERIALIZATION_NVP(vd) & BOOST_SERIALIZATION_NVP(vecs);
+
+		this->duplicate = new uint[n];
+		memcpy(duplicate, &vdup[0], n * sizeof(uint));
+		this->d = new uint[vd.size()];
+		memcpy(d, &vd[0], vd.size() * sizeof(uint));
+
+		this->s = new Psums*[vecs.size()];
+		for (int i = 0; i < vecs.size(); i++)
+			this->s[i] = new Psums(vecs[i].real, vecs[i].pos);
+		enc = encodeGamma;
+		dec = decodeGamma;
+
+	}
+	BOOST_SERIALIZATION_SPLIT_MEMBER( )public:
 	CompressedPsums(uint *a, uint n, uint k, encodef enc, decodef dec) {
 		this->n = n;
 		this->k = k;
@@ -69,7 +120,7 @@ public:
 
 		uint repetitions = 0;
 		for (uint i = 0; i < n; i++)
-			this->duplicate[i] = 0;
+		this->duplicate[i] = 0;
 		/**
 		 * duplicate用于记录每个元素与之前重复的次数
 		 * new_a存储去重以后的数组a，注意new_a赋值的延迟性
@@ -123,7 +174,7 @@ public:
 		}
 //		cout << "Done" << endl;
 	}
-
+	CompressedPsums():k(10),enc(encodeGamma),dec(decodeGamma) {}
 	uint * encode() {
 		uint *b = new uint[this->new_n - 1];
 		for (int i = 0; i < new_n - 1; i++) {
@@ -139,7 +190,7 @@ public:
 		uint duplicates = 0;
 		uint total = 0;
 		for (int i = 0; i < new_n - 1; i++)
-			encode_length += this->enc(c, 0, b[i]);
+		encode_length += this->enc(c, 0, b[i]);
 
 		this->size = encode_length;
 		//cout << encode_length << endl;
@@ -176,7 +227,7 @@ public:
 		//	cout << "pos recibido = " << pos << endl;
 		int new_pos;
 		if (pos > n - 1)
-			return 0;
+		return 0;
 
 		if (this->duplicate[pos] != 0) {
 			if (duplicate[pos] <= pos) {
@@ -197,7 +248,7 @@ public:
 
 		//	cout << "new_pos (pos/k) = " << new_pos << endl;
 		if (this->s[new_pos] == NULL)
-			return 0;
+		return 0;
 		uint real = this->s[new_pos]->real;
 //		cout << "numero real = " << real << endl;
 		uint real_pos = this->s[new_pos]->pos;
@@ -226,7 +277,6 @@ public:
 	uint getSize() {
 		return this->size;
 	}
-
 };
 
 uint *sort(uint *a, uint n) {
@@ -264,6 +314,7 @@ void PStest() {
 
 		ps->encode();
 		cout << "size = " << ps->getSize() << endl;
+
 		for (int i = 0; i < n; i++) {
 			B[i] = ps->decode(i);
 			//cout << B[i] << endl;

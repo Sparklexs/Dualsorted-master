@@ -7,154 +7,93 @@
 
 #include "Dualsorted.cpp"
 #include <queue>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/date_time/gregorian/gregorian.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
-#include "parse_invlist.cpp"
+//#include "parse_invlist.cpp"
+//#include "utils.cpp"
 using namespace std;
-using namespace boost::gregorian;
-using namespace boost::posix_time;
-template<class T = microsec_clock>
-class MyTimer {
-private:
-	ptime m_startTime;
-	ptime m_endTime;
-public:
-	MyTimer() {
-		Restart();
-	}
-	void Restart() {
-		m_startTime = T::local_time();
-	}
-
-	ptime Elapsed() {
-		m_endTime = T::local_time();
-		cout << m_endTime - m_startTime << endl;
-	}
-};
-
-class SerializedDS {
-private:
-	friend class boost::serialization::access;
-	template<class Archive>
-	void serialize(Archive &ar, const unsigned int version) {
-	}
-public:
-	Dualsorted ds;
-
-};
 
 void save(vector<string> words, vector<vector<int> > result, vector<int> freqs,
-		size_t *doclens, size_t ndocuments) {
-
-	stringstream txtStream;
-	stringstream xmlStream;
-	stringstream binStream;
-	int max = 1;
+		uint *doclens, size_t ndocuments) {
 	MyTimer<microsec_clock> t;
-	vector<size_t> vdoclens(doclens, doclens + ndocuments);
-
-	//txt使用时间
-//	cout << "txt序列化时间： ";
-//	t.Restart();
-//	std::ofstream file1("archive.txt");
-//	boost::archive::text_oarchive txta(txtStream);
-//	for (int i = 0; i < max; ++i) {
-//		txta & BOOST_SERIALIZATION_NVP(words) & BOOST_SERIALIZATION_NVP(result)
-//		& BOOST_SERIALIZATION_NVP(freqs) & BOOST_SERIALIZATION_NVP(vdoclens);
-//		//		cout << "size:" << txtStream.tellg() << endl;
-//	}
-//	t.Elapsed();
-
-	cout << "txt反序列化时间： ";
-	std::ifstream file1("archive.txt");
-	t.Restart();
-	for (int i = 0; i < max; ++i) {
-		words.clear();
-		result.clear();
-		freqs.clear();
-		vdoclens.clear();
-
-		boost::archive::text_iarchive ia(file1);
-		ia & BOOST_SERIALIZATION_NVP(words);
-		ia & BOOST_SERIALIZATION_NVP(result);
-		ia & BOOST_SERIALIZATION_NVP(freqs);
-		ia & BOOST_SERIALIZATION_NVP(vdoclens);
-	}
-	t.Elapsed();
-
-	//xml使用时间
-//	cout << "xml序列化时间： ";
-//	t.Restart();
-//	std::ofstream file("archive.xml");
-//	boost::archive::xml_oarchive oa(xmlStream);
-//	for (int i = 0; i < max; ++i) {
-//		oa & BOOST_SERIALIZATION_NVP(words) & BOOST_SERIALIZATION_NVP(result)
-//		& BOOST_SERIALIZATION_NVP(freqs) & BOOST_SERIALIZATION_NVP(vdoclens);
-////		cout << "size:" << xmlStream.tellg() << endl;
-//	}
-//	t.Elapsed();
-
-//	cout << "xml反序列化时间： ";
-//	std::ifstream file("archive.xml");
-//	t.Restart();
-//	for (int i = 0; i < max; ++i) {
-//		words.clear();
-//		result.clear();
-//		freqs.clear();
-//		vdoclens.clear();
-//
-//		boost::archive::xml_iarchive ia(file);
-//		ia & BOOST_SERIALIZATION_NVP(words);
-//		ia & BOOST_SERIALIZATION_NVP(result);
-//		ia & BOOST_SERIALIZATION_NVP(freqs);
-//		ia & BOOST_SERIALIZATION_NVP(vdoclens);
-////		cout<<words[i]<<endl;
-//	}
-//	t.Elapsed();
+	vector<uint> vdoclens(doclens, doclens + ndocuments);
 
 //binary使用时间
-//	cout << "bin序列化时间： ";
-//	t.Restart();
-//	std::ofstream file2("archive.dat");
-//	boost::archive::binary_oarchive bina(binStream);
-//	for (int i = 0; i < max; ++i) {
-//		bina & BOOST_SERIALIZATION_NVP(words) & BOOST_SERIALIZATION_NVP(result)
-//		& BOOST_SERIALIZATION_NVP(freqs) & BOOST_SERIALIZATION_NVP(vdoclens);
-////		cout << "size:" << binStream.tellg() << endl;
-//	}
-//	t.Elapsed();
-
-	cout << "bin反序列化时间： ";
-	std::ifstream file2("archive.dat");
+	cout << "bin序列化时间: ";
 	t.Restart();
-	for (int i = 0; i < max; ++i) {
-		words.clear();
-		result.clear();
-		freqs.clear();
-		vdoclens.clear();
-
-		boost::archive::binary_iarchive ia(file2);
-		ia & BOOST_SERIALIZATION_NVP(words);
-		ia & BOOST_SERIALIZATION_NVP(result);
-		ia & BOOST_SERIALIZATION_NVP(freqs);
-		ia & BOOST_SERIALIZATION_NVP(vdoclens);
-	}
+	std::ofstream file("./serialization/vectors.dat");
+	boost::archive::binary_oarchive bina(file);
+	bina & BOOST_SERIALIZATION_NVP(words) & BOOST_SERIALIZATION_NVP(result)
+	& BOOST_SERIALIZATION_NVP(freqs) & BOOST_SERIALIZATION_NVP(vdoclens);
 	t.Elapsed();
+	//另外存储给Dualsorted恢复使用
+	std::ofstream file1("./serialization/words.dat");
+	boost::archive::binary_oarchive bina1(file1);
+	bina1 & BOOST_SERIALIZATION_NVP(words);
+
+	std::ofstream file2("./serialization/doclens.dat");
+	boost::archive::binary_oarchive bina2(file2);
+	bina1 & BOOST_SERIALIZATION_NVP(vdoclens);
 }
-void load() {
+Dualsorted* loadForGOV2() {
+
+	MyTimer<microsec_clock> t;
+	vector<string> words;
+	vector<vector<int> > result;
+	vector<int> freqs;
+	vector<uint> vdoclens;
+
+	cout << "bin反序列化时间: ";
+	//还原words
+	ifstream file("./serialization/words.dat");
+	boost::archive::binary_iarchive ia(file);
+	ia & BOOST_SERIALIZATION_NVP(words);
+	//还原result
+	ifstream file1("./serialization/result.dat");
+	boost::archive::binary_iarchive ia1(file1);
+	ia1 & BOOST_SERIALIZATION_NVP(result);
+	//还原freqs
+	ifstream file2("./serialization/freqs.txt");
+	boost::archive::text_iarchive ia2(file2);
+	ia2 & BOOST_SERIALIZATION_NVP(freqs);
+	//还原doclens
+	ifstream file3("./serialization/doclens.dat");
+	boost::archive::binary_iarchive ia3(file3);
+	ia3 & BOOST_SERIALIZATION_NVP(vdoclens);
+	uint * doclens = new uint[vdoclens.size()];
+	memcpy(doclens, &vdoclens[0], vdoclens.size());
+	t.Elapsed();
+
+	return new Dualsorted(words, result, freqs, words.size(), doclens,
+			vdoclens.size());
 
 }
+Dualsorted* load() {
+	MyTimer<microsec_clock> t;
+	cout << "bin反序列化时间: ";
+	std::ifstream file2("./serialization/vectors.dat");
+	t.Restart();
+	vector<string> words;
+	vector<vector<int> > result;
+	vector<int> freqs;
+	vector<uint> vdoclens;
+
+	boost::archive::binary_iarchive ia(file2);
+	ia & BOOST_SERIALIZATION_NVP(words);
+	ia & BOOST_SERIALIZATION_NVP(result);
+	ia & BOOST_SERIALIZATION_NVP(freqs);
+	ia & BOOST_SERIALIZATION_NVP(vdoclens);
+	uint * doclens = new uint[vdoclens.size()];
+	memcpy(doclens, &vdoclens[0], vdoclens.size());
+	t.Elapsed();
+	return new Dualsorted(words, result, freqs, words.size(), doclens,
+			vdoclens.size());
+}
+//第一次调用时使用的方法，生成archive文件，之后就可以直接调用load加快速度
 Dualsorted* ReadFiles(char** argv) {
 	const char* invlist = argv[1];
 	const char* invlistfreq = argv[2];
@@ -220,14 +159,14 @@ Dualsorted* ReadFiles(char** argv) {
 
 	string sfilter = " \n\0";
 	size_t ndocuments;
-	size_t *doclens;
+	uint *doclens;
 	ifstream doclen_data(doclens_file);
 	//	cout << "constructing doc_lens data..." << endl;
 	if (doclen_data.is_open()) {
 		getline(doclen_data, line);
 		//	cout << "line = " << line << endl;
 		ndocuments = atoi(line.c_str());
-		doclens = new size_t[ndocuments];
+		doclens = new uint[ndocuments];
 		for (int i = 0; i < ndocuments; i++) {
 			vector<string> doc_data;
 			getline(doclen_data, line);
@@ -255,7 +194,7 @@ int main(int argc, char** argv) {
 //		bs->setBit(4294967302);
 //		BitSequenceRG *bsrg = new BitSequenceRG(*bs, 2);
 	//测试partialSums类
-	//PStest();
+//	PStest();
 
 //测试parse_invlist类,并行导致输出不可控，已经obsolete
 //	vector<string> filelist = getFiles("/cygdrive/d/WorkSpaceC/var");
@@ -264,7 +203,20 @@ int main(int argc, char** argv) {
 //			string("song"));
 
 //测试DualSorted类
-	Dualsorted* ds = ReadFiles(argv);
+	//关于读取Dualsorted，如果已经save过，优先读取save的，否则查看
+	//是否把vector已经save过了，否则最后才从原始文件一步步初始化
+	Dualsorted* ds;
+	ifstream ifwm("./serialization/wm.dat");
+	if (ifwm.good())
+		ds = Dualsorted::load();
+	else {
+		ifstream ifvec("./serialization/vectors.dat");
+		if (ifvec.good())
+			ds = load();
+		else
+			ds = ReadFiles(argv);
+		ds->save();
+	}
 	ds->DStest();
 
 	return 0;

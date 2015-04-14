@@ -1,5 +1,10 @@
 #include "Dualsorted.h"
 
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/string.hpp>
+
 using namespace cds_static;
 
 //a是有序字符串，二分查找字符s
@@ -21,18 +26,19 @@ inline uint search(const char** a, const char* s, uint n) {
 	}
 	return -1;
 }
+
 //这里的freqs文件是所有的frequency倒排文件链接而成的，可能会很大
-Dualsorted::Dualsorted(vector<string> vocab, vector<vector<int> > &result,
-		vector<int> &freqs, uint size_terms, size_t *doclens,
+Dualsorted::Dualsorted(vector<string> words, vector<vector<int> > &result,
+		vector<int> &freqs, size_t size_terms, uint *doclens,
 		size_t ndocuments) {
 	// cout << "Amount of terms: " << size_terms << endl;
 
-	for (uint i = 0; i < vocab.size(); i++) {
+	for (uint i = 0; i < words.size(); i++) {
 		//cout << vocab[i] << ": " << i << endl;
-		this->terms[vocab[i]] = i;
+		this->terms[words[i]] = i;
 	}
 	//使用完立即释放
-	vocab.clear();
+	words.clear();
 	//vocab.shrink_to_fit();
 	//   cout << "searching" << endl;
 	//  cout << search(this->terms,"wikipedia",size_terms) << endl;
@@ -46,20 +52,27 @@ Dualsorted::Dualsorted(vector<string> vocab, vector<vector<int> > &result,
 
 	this->k = 10;
 
-//	cout << "Building St...";
+	cout << "Building St...";
+	clock_t start, finish;
+	start = clock();
 	this->buildSt();
-//	cout << "Done!" << endl;
-//	cout << "Building PartialSums...";
+	finish = clock();
+	cout << "Done!  time elapsed: "
+			<< (double) (finish - start) / CLOCKS_PER_SEC << endl;
+	cout << "Building PartialSums...";
+	start = clock();
 	this->buildSums();
 	this->freqs.clear();
-	//freqs.shrink_to_fit();
-//	cout << "Done!" << endl;
-//	cout << "Building L..."; 
+	finish = clock();
+	cout << "Done!  time elapsed: "
+			<< (double) (finish - start) / CLOCKS_PER_SEC << endl;
+	cout << "Building L...";
+	start = clock();
 	this->buildL();
-	//this->result.clear();
-	result.shrink_to_fit();
-//	cout << "Done!" << endl;
-
+	this->result.clear();
+	finish = clock();
+	cout << "Done!  time elapsed: "
+			<< (double) (finish - start) / CLOCKS_PER_SEC << endl;
 }
 
 // Fix this
@@ -332,6 +345,63 @@ Sequence * Dualsorted::buildL() {
 	return this->L;
 
 }
+void Dualsorted::save() {
+	ofstream ofst("./serialization/st.dat");
+	this->st->save(ofst);
+	ofstream ofwm("./serialization/wm.dat");
+	this->L->save(ofwm);
+
+	vector<CompressedPsums> vps;
+	for (int i = 0; i < this->size_terms; i++)
+		vps.push_back(*(this->ps[i]));
+	std::ofstream file("./serialization/Psums.dat");
+	boost::archive::binary_oarchive bina1(file);
+	bina1 & BOOST_SERIALIZATION_NVP(vps);
+
+}
+Dualsorted* Dualsorted::load() {
+	Dualsorted* ds = new Dualsorted();
+
+	ifstream ifst("./serialization/st.dat");
+	ds->st = BitSequenceRG::load(ifst);
+
+	ifstream ifwm("./serialization/wm.dat");
+	ds->L = WaveletMatrix::load(ifwm);
+
+	ds->L_size = ds->L->getLength();
+	ds->size_terms = ds->st->countOnes();
+	ds->k = 10;
+
+	vector<uint> vdoclens;
+	std::ifstream file2("./serialization/doclens.dat");
+	boost::archive::binary_iarchive ia(file2);
+	ia & BOOST_SERIALIZATION_NVP(vdoclens);
+	ds->ndocuments = vdoclens.size();
+	ds->doclens = new uint[vdoclens.size()];
+	memcpy(ds->doclens, &vdoclens[0], vdoclens.size());
+
+	std::ifstream file1("./serialization/words.dat");
+	boost::archive::binary_iarchive ia2(file1);
+	vector<string> words;
+	ia2 & BOOST_SERIALIZATION_NVP(words);
+	for (uint i = 0; i < words.size(); i++) {
+		//cout << vocab[i] << ": " << i << endl;
+		ds->terms[words[i]] = i;
+	}
+	words.clear();
+
+	vector<CompressedPsums> vps;
+	std::ifstream file("./serialization/Psums.dat");
+	boost::archive::binary_iarchive ia1(file);
+	ia1 & BOOST_SERIALIZATION_NVP(vps);
+	ds->ps = new CompressedPsums*[ds->size_terms];
+	for (int i = 0; i < vps.size(); i++) {
+		ds->ps[i] = new CompressedPsums();
+		memcpy(ds->ps[i], &vps[i], sizeof(CompressedPsums));
+	}
+
+	return ds;
+}
 
 void Dualsorted::DStest() {
 
@@ -341,27 +411,27 @@ void Dualsorted::DStest() {
 	cout << "Test Begin!" << endl;
 	google::sparse_hash_map<string, uint>::iterator it = terms.begin();
 
-//	cout << "Testing getTermID" << endl;
-//	for (; it != terms.end(); it++) {
-//		cout << (*it).first << ":" << this->getTermID((*it).first.c_str())
-//				<< endl;
-//	}
+	cout << "Testing getTermID" << endl;
+	for (; it != terms.end(); it++) {
+		cout << (*it).first << ":" << this->getTermID((*it).first.c_str())
+				<< endl;
+	}
 
-//	cout << "Testing getPostingSize" << endl;
-//	it = terms.begin();
-//	for (; it != terms.end(); it++) {
-//		uint postLength = this->getPostingSize((*it).first);
-//		cout << (*it).first << ":" << postLength << endl;
-//		for (uint i = 0; i < postLength; i++) {
-//			cout << this->getFreqOfPosting((*it).first.c_str(), i) << endl;
-//		}
-//	}
+	cout << "Testing getPostingSize" << endl;
+	it = terms.begin();
+	for (; it != terms.end(); it++) {
+		uint postLength = this->getPostingSize((*it).first);
+		cout << (*it).first << ":" << postLength << endl;
+		for (uint i = 0; i < postLength; i++) {
+			cout << this->getFreqOfPosting((*it).first.c_str(), i) << endl;
+		}
+	}
 	cout << "Testing getPostTerm" << endl;
-
 	cout << "getLength:" << this->L->getLength() << endl;
-//for(int i=0;i<100;i++)
-//		{cout<<this->L->access(i)<<endl;
-//	cout <<this->L->select(1,i)<< endl;}
+	for (int i = 0; i < 100; i++) {
+		cout << this->L->access(i) << endl;
+		cout << this->L->select(1, i) << endl;
+	}
 
 	cout << this->L->rank(1, 1) << endl;
 	cout << this->L->rank(12, 20) << endl;

@@ -4,7 +4,7 @@
 #include <vector>
 #include <cstdlib>
 #include <sstream>
-//#include "utils.cpp"
+#include "utils.cpp"
 #include <algorithm>
 #include <google/sparse_hash_map>
 #include <WaveletTree.h>
@@ -13,6 +13,7 @@
 #include <BitSequenceRG.h>
 #include <BitString.h>
 #include "partialSums.cpp"
+
 //#include "delta.c"
 
 using namespace std;
@@ -22,7 +23,6 @@ using namespace __gnu_cxx;
 class Dualsorted {
 private:
 	// Main Data Structures
-
 	WaveletMatrix *L; //把所有term对应的docid倒排链链接而成
 	BitSequence *st; //term的docid链的bitmap连接图
 	CompressedPsums ** ps; //指向每个term对应的frequency倒排链
@@ -35,22 +35,29 @@ private:
 	//	vector<string> terms;
 
 	// Lengths
-	uint size_terms;
+	size_t size_terms;
 	size_t L_size;
 	int k;
 
 public:
-	size_t *doclens;
+	uint *doclens;
 	size_t ndocuments;
 	Dualsorted(vector<string> terms, vector<vector<int> > &result,
-			vector<int> &freqs, uint size_terms, size_t *doclens,
+			vector<int> &freqs, size_t size_terms, uint *doclens,
 			size_t ndocuments);
+	Dualsorted() :
+			k(10) {
+	}
+	;
 	BitSequence *buildSt();
 	Sequence * buildL();
 	void buildSums();
 
 	// Requested function implementations
 
+	//保存
+	void save();
+	static Dualsorted* load();
 	//根据输入的term和该term倒排链内的索引，获取给索引代表的docid
 	uint getDocidOfPosting(string term, uint i);
 
