@@ -30,14 +30,11 @@ void save(vector<string> words, vector<vector<int> > result, vector<int> freqs,
 	bina & BOOST_SERIALIZATION_NVP(words) & BOOST_SERIALIZATION_NVP(result)
 	& BOOST_SERIALIZATION_NVP(freqs) & BOOST_SERIALIZATION_NVP(vdoclens);
 	t.Elapsed();
-	//另外存储给Dualsorted恢复使用
-	std::ofstream file1("./serialization/words.dat");
-	boost::archive::binary_oarchive bina1(file1);
-	bina1 & BOOST_SERIALIZATION_NVP(words);
 
+	//另外存储给Dualsorted恢复使用
 	std::ofstream file2("./serialization/doclens.dat");
 	boost::archive::binary_oarchive bina2(file2);
-	bina1 & BOOST_SERIALIZATION_NVP(vdoclens);
+	bina2 & BOOST_SERIALIZATION_NVP(vdoclens);
 }
 Dualsorted* loadForGOV2() {
 
