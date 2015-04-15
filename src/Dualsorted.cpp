@@ -375,7 +375,7 @@ Dualsorted* Dualsorted::load() {
 	vector<uint> vdoclens;
 	vector<string> words;
 	std::ifstream file("./serialization/doclens.dat");
-	std::ifstream file1("./serialization/vectors.dat");
+	std::ifstream file1("./serialization/words.dat");
 	boost::archive::binary_iarchive ia(file);
 	boost::archive::binary_iarchive ia1(file1);
 
@@ -383,6 +383,7 @@ Dualsorted* Dualsorted::load() {
 	ds->ndocuments = vdoclens.size();
 	ds->doclens = new uint[vdoclens.size()];
 	memcpy(ds->doclens, &vdoclens[0], vdoclens.size());
+	vdoclens.clear();
 
 	ia1 & BOOST_SERIALIZATION_NVP(words);
 	for (uint i = 0; i < words.size(); i++) {
@@ -400,7 +401,7 @@ Dualsorted* Dualsorted::load() {
 		ds->ps[i] = new CompressedPsums();
 		memcpy(ds->ps[i], &vps[i], sizeof(CompressedPsums));
 	}
-
+	vps.clear();
 	return ds;
 }
 
