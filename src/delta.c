@@ -15,16 +15,16 @@ uint encodeGamma(uint* output, uint pos, uint value) {
 	uint l = logb2(value);
 	uint i;	
 	for(i = 0; i < l; i++) {
-		bitclean(output,pos);
+		mybitclean(output,pos);
 		pos++;
 	}
-	bitset(output,pos);
+	mybitset(output,pos);
 	pos++;
 	for(i = 0; i < l; i++) {
 		if(value & (1 << i))
-			bitset(output,pos);
+			mybitset(output,pos);
 		else
-			bitclean(output,pos);
+			mybitclean(output,pos);
 		pos++;
 	}
 	
@@ -35,13 +35,13 @@ uint decodeGamma(uint* input, uint pos, uint* value) {
 	uint nbits = 0;
 	uint lValue = 0;
 	register uint i;
-	while(!bitget(input,pos)) {
+	while(!mybitget(input,pos)) {
 		nbits++;
 		pos++;
 	}
 	pos++;
 	for(i = 0; i < nbits; i++) {
-		if(bitget(input,pos))
+		if(mybitget(input,pos))
 			lValue += 1 << i;
 		pos++;
 	}
@@ -151,9 +151,9 @@ uint encodeDelta(uint* output, uint pos, uint value) {
 	uint i;	
 	for(i = 0; i < l; i++) {
 		if(value & (1 << i))
-			bitset(output,pos);
+			mybitset(output,pos);
 		else 
-			bitclean(output,pos);
+			mybitclean(output,pos);
 		encodedBits++; 
 		pos++;
 	}
@@ -168,7 +168,7 @@ uint decodeDelta(uint* input, uint pos, uint* value) {
 	pos += decodedBits;
 	register uint i;
 	for(i = 0; i < nbits; i++) {
-		if(bitget(input,pos)) lValue += (1 << i);
+		if(mybitget(input,pos)) lValue += (1 << i);
 		pos++;
 	}
 	lValue |= (1 << nbits);

@@ -6,14 +6,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/archive/xml_iarchive.hpp>
+#include <cppUtils.h>
+#ifdef USE_BOOST_SERIALIZATION
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
+#endif
 using namespace std;
 
 const int NUM_SIZE = 32;
@@ -31,12 +29,16 @@ typedef uint (*encodef)(uint* output, uint pos, uint value);
 typedef uint (*decodef)(uint* input, uint pos, uint* value);
 
 class Psums {
+
+#ifdef USE_BOOST_SERIALIZATION
 private:
 	friend class boost::serialization::access;
 	template<class Archive>
 	void serialize(Archive &ar, const unsigned int version) {
 		ar & BOOST_SERIALIZATION_NVP(real) & BOOST_SERIALIZATION_NVP(pos);
 	}
+#endif
+
 public:
 	uint real;
 	int pos;
@@ -48,6 +50,14 @@ public:
 	Psums(uint _real, uint _pos) {
 		real = _real;
 		pos = _pos;
+	}
+	void save(ofstream &of) const {
+		cds_utils::saveValue<uint>(of, real);
+		cds_utils::saveValue<int>(of, pos);
+	}
+	static Psums* load(ifstream &inf) {
+		return new Psums(cds_utils::loadValue<uint>(inf),
+				cds_utils::loadValue<int>(inf));
 	}
 	void setPos(int pos) {
 		this->pos = pos;
@@ -74,6 +84,7 @@ private:
 
 	encodef enc;
 	decodef dec;
+#ifdef USE_BOOST_SERIALIZATION
 	friend class boost::serialization::access;
 	template<class Archive>
 	void save(Archive& ar, const unsigned int version) const {
@@ -81,7 +92,7 @@ private:
 		vector<uint> vd(d, d + size / NUM_SIZE);
 		vector<Psums> vecs;
 		for (int i = 0; i < new_n / k + 1; i++)
-			vecs.push_back(*(this->s[i]));
+		vecs.push_back(*(this->s[i]));
 		ar & BOOST_SERIALIZATION_NVP(n) & BOOST_SERIALIZATION_NVP(k)
 		& BOOST_SERIALIZATION_NVP(size) & BOOST_SERIALIZATION_NVP(vdup)
 		& BOOST_SERIALIZATION_NVP(vd) & BOOST_SERIALIZATION_NVP(vecs);
@@ -103,12 +114,15 @@ private:
 
 		this->s = new Psums*[vecs.size()];
 		for (int i = 0; i < vecs.size(); i++)
-			this->s[i] = new Psums(vecs[i].real, vecs[i].pos);
+		this->s[i] = new Psums(vecs[i].real, vecs[i].pos);
 		enc = encodeGamma;
 		dec = decodeGamma;
 
 	}
-	BOOST_SERIALIZATION_SPLIT_MEMBER( )public:
+	BOOST_SERIALIZATION_SPLIT_MEMBER( )
+
+#endif
+public:
 	CompressedPsums(uint *a, uint n, uint k, encodef enc, decodef dec) {
 		this->n = n;
 		this->k = k;
@@ -120,7 +134,7 @@ private:
 
 		uint repetitions = 0;
 		for (uint i = 0; i < n; i++)
-		this->duplicate[i] = 0;
+			this->duplicate[i] = 0;
 		/**
 		 * duplicate用于记录每个元素与之前重复的次数
 		 * new_a存储去重以后的数组a，注意new_a赋值的延迟性
@@ -174,7 +188,58 @@ private:
 		}
 //		cout << "Done" << endl;
 	}
-	CompressedPsums():k(10),enc(encodeGamma),dec(decodeGamma) {}
+	CompressedPsums() :
+			k(10), enc(encodeGamma), dec(decodeGamma) {
+	}
+
+	~CompressedPsums() {
+		if (s) {
+			for (int i = 0; i < ((this->n - this->duplicate[n - 1]) / k) + 1;
+					i++) {
+				delete s[i];
+				this->s[i] = NULL;
+			}
+			delete[] s;
+			this->s = NULL;
+		}
+
+		delete[] new_a;
+		this->new_a = NULL;
+		delete[] a;
+		this->a = NULL;
+		delete[] d;
+		this->d = NULL;
+		delete[] duplicate;
+		this->duplicate = NULL;
+	}
+#ifndef USE_BOOST_SERIALIZATION
+	void save(ofstream &of) const {
+		cds_utils::saveValue<uint>(of, n);
+		cds_utils::saveValue<uint>(of, k);
+		cds_utils::saveValue<uint>(of, size);
+		cds_utils::saveValue<uint>(of, d, size / NUM_SIZE);
+		cds_utils::saveValue<uint>(of, duplicate, n);
+		for (int i = 0; i < new_n / k + 1; i++)
+			s[i]->save(of);
+	}
+
+	static CompressedPsums* load(ifstream &inf) {
+		CompressedPsums *cs = new CompressedPsums();
+		cs->n = cds_utils::loadValue<uint>(inf);
+		cs->k = cds_utils::loadValue<uint>(inf);
+		cs->size = cds_utils::loadValue<uint>(inf);
+		cs->d = cds_utils::loadValue<uint>(inf, cs->size / NUM_SIZE);
+		cs->duplicate = cds_utils::loadValue<uint>(inf, cs->n);
+		int height = (cs->n - cs->duplicate[cs->n - 1]) / cs->k + 1;
+		cs->s = new Psums*[height];
+		for (int i = 0; i < height; i++)
+			cs->s[i] = Psums::load(inf);
+		cs->enc = encodeGamma;
+		cs->dec = decodeGamma;
+		return cs;
+
+	}
+#endif
 	uint * encode() {
 		uint *b = new uint[this->new_n - 1];
 		for (int i = 0; i < new_n - 1; i++) {
@@ -190,7 +255,7 @@ private:
 		uint duplicates = 0;
 		uint total = 0;
 		for (int i = 0; i < new_n - 1; i++)
-		encode_length += this->enc(c, 0, b[i]);
+			encode_length += this->enc(c, 0, b[i]);
 
 		this->size = encode_length;
 		//cout << encode_length << endl;
@@ -220,14 +285,13 @@ private:
 		}
 		return d;
 	}
-
 	uint decode(uint pos) {
 
 //		cout << " ------- " << endl;
 		//	cout << "pos recibido = " << pos << endl;
 		int new_pos;
 		if (pos > n - 1)
-		return 0;
+			return 0;
 
 		if (this->duplicate[pos] != 0) {
 			if (duplicate[pos] <= pos) {
@@ -248,7 +312,7 @@ private:
 
 		//	cout << "new_pos (pos/k) = " << new_pos << endl;
 		if (this->s[new_pos] == NULL)
-		return 0;
+			return 0;
 		uint real = this->s[new_pos]->real;
 //		cout << "numero real = " << real << endl;
 		uint real_pos = this->s[new_pos]->pos;

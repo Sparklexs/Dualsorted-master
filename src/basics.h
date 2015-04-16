@@ -59,11 +59,11 @@ void bitwrite(uint *e, uint p, uint len, uint s);
 //NOt WORKING UPON THE LIMIT OF THE STARTING uint.
 void bitzero(uint *e, uint p, uint len);
 // reads bit p from e
-#define bitget(e,p) (((e)[(p)/myW] >> ((p)%myW)) & 1)
+#define mybitget(e,p) (((e)[(p)/myW] >> ((p)%myW)) & 1)
 // sets bit p in e
-#define bitset(e,p) ((e)[(p)/myW] |= (1<<((p)%myW)))
+#define mybitset(e,p) ((e)[(p)/myW] |= (1<<((p)%myW)))
 // cleans bit p in e
-#define bitclean(e,p) ((e)[(p)/myW] &= ~(1<<((p)%myW)))
+#define mybitclean(e,p) ((e)[(p)/myW] &= ~(1<<((p)%myW)))
 
 /* bitRead and bitWrite as MACROS */
 // returns e[p..p+len-1], assuming len <= myW

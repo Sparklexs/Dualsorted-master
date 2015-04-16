@@ -350,14 +350,19 @@ void Dualsorted::save() {
 	this->st->save(ofst);
 	ofstream ofwm("./serialization/wm.dat");
 	this->L->save(ofwm);
-
+#ifdef USE_BOOST_SERIALIZATION
 	vector<CompressedPsums> vps;
 	for (int i = 0; i < this->size_terms; i++)
-		vps.push_back(*(this->ps[i]));
+	vps.push_back(*(this->ps[i]));
 	std::ofstream file("./serialization/Psums.dat");
 	boost::archive::binary_oarchive bina1(file);
 	bina1 & BOOST_SERIALIZATION_NVP(vps);
-
+	vps.clear();
+#else
+	std::ofstream sumfile("./serialization/Psumsnew.dat");
+	for (int i = 0; i < this->size_terms; i++)
+		this->ps[i]->save(sumfile);
+#endif
 }
 Dualsorted* Dualsorted::load() {
 	Dualsorted* ds = new Dualsorted();
@@ -392,16 +397,23 @@ Dualsorted* Dualsorted::load() {
 	}
 	words.clear();
 
+#ifndef USE_BOOST_SERIALIZATION
+	std::ifstream sumfile("./serialization/Psumsnew.dat");
+	ds->ps = new CompressedPsums*[ds->size_terms];
+	for (int i = 0; i < ds->size_terms; i++)
+		ds->ps[i] = CompressedPsums::load(sumfile);
+#else
 	vector<CompressedPsums> vps;
 	std::ifstream file2("./serialization/Psums.dat");
 	boost::archive::binary_iarchive ia2(file2);
 	ia2 & BOOST_SERIALIZATION_NVP(vps);
-	ds->ps = new CompressedPsums*[ds->size_terms];
+
 	for (int i = 0; i < vps.size(); i++) {
 		ds->ps[i] = new CompressedPsums();
 		memcpy(ds->ps[i], &vps[i], sizeof(CompressedPsums));
 	}
 	vps.clear();
+#endif
 	return ds;
 }
 
