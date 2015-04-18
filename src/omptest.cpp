@@ -104,12 +104,13 @@ Dualsorted* ReadFiles(char** argv) {
 	const char* vocab = argv[3];
 	const char* doclens_file = argv[4];
 
-	ifstream wordsfile;
-	wordsfile.open(vocab);
-	vector<string> words;
 	string line;
 
 	//读取词典文件
+	ifstream wordsfile;
+	wordsfile.open(vocab);
+	vector<string> words;
+
 	while (wordsfile.good()) {
 		getline(wordsfile, line);
 		words.push_back(line);
@@ -161,6 +162,7 @@ Dualsorted* ReadFiles(char** argv) {
 	//并没有压入freqs，所以不再弹出
 	freqfile.close();
 
+	//读取doclens
 	string sfilter = " \n\0";
 	size_t ndocuments;
 	uint *doclens;
@@ -184,12 +186,11 @@ Dualsorted* ReadFiles(char** argv) {
 	//这里由于限定了只读取ndocuments行，不需要弹出
 	docfile.close();
 
+	//保存读取的数据为二进制文件
 	save(words, result, freqs, doclens, ndocuments);
-
+	//返回生成的DS
 	return new Dualsorted(words, result, freqs, words.size(), doclens,
 			ndocuments);
-	//return *ds;
-	//ds->DStest();
 }
 
 int main(int argc, char** argv) {

@@ -365,13 +365,18 @@ void Dualsorted::save() {
 #endif
 }
 Dualsorted* Dualsorted::load() {
+	MyTimer<microsec_clock> t;
 	Dualsorted* ds = new Dualsorted();
-
+	cout << "读取st.dat";
+	t.Restart();
 	ifstream ifst("./serialization/st.dat");
 	ds->st = BitSequenceRG::load(ifst);
-
+	t.Elapsed();
+	cout << "读取wm.dat";
+	t.Restart();
 	ifstream ifwm("./serialization/wm.dat");
 	ds->L = WaveletMatrix::load(ifwm);
+	t.Elapsed();
 
 	ds->L_size = ds->L->getLength();
 	ds->size_terms = ds->st->countOnes();
@@ -384,19 +389,27 @@ Dualsorted* Dualsorted::load() {
 	boost::archive::binary_iarchive ia(file);
 	boost::archive::binary_iarchive ia1(file1);
 
+	cout << "读取doclens.dat";
+	t.Restart();
 	ia & BOOST_SERIALIZATION_NVP(vdoclens);
 	ds->ndocuments = vdoclens.size();
 	ds->doclens = new uint[vdoclens.size()];
 	memcpy(ds->doclens, &vdoclens[0], vdoclens.size());
 	vdoclens.clear();
+	t.Elapsed();
 
+	cout << "读取words.dat";
+	t.Restart();
 	ia1 & BOOST_SERIALIZATION_NVP(words);
 	for (uint i = 0; i < words.size(); i++) {
 		//cout << vocab[i] << ": " << i << endl;
 		ds->terms[words[i]] = i;
 	}
 	words.clear();
+	t.Elapsed();
 
+	cout << "读取Psumsnew.dat";
+	t.Restart();
 #ifndef USE_BOOST_SERIALIZATION
 	std::ifstream sumfile("./serialization/Psumsnew.dat");
 	ds->ps = new CompressedPsums*[ds->size_terms];
@@ -414,6 +427,8 @@ Dualsorted* Dualsorted::load() {
 	}
 	vps.clear();
 #endif
+	t.Elapsed();
+
 	return ds;
 }
 
