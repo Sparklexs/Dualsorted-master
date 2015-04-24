@@ -11,7 +11,7 @@ SRC=src/
 DEBUG=Debug/
 
 all: $(OBJS) #dslib
-	$(CPP) $(CPPFLAGS) $(INCLUDES) -o  $(DEBUG)test  $(DEBUG)omptest.o $(LIB)
+	$(CPP) $(CPPFLAGS) $(INCLUDES) -o  $(DEBUG)test $(DEBUG)delta.o $(DEBUG)utils.o $(DEBUG)Dualsorted.o $(DEBUG)omptest.o $(LIB)
 	
 basics.o : $(SRC)basics.c $(SRC)basics.h
 	$(CPP) $(CPPFLAGS) $(INCLUDES) -c $(SRC)basics.c -o $(DEBUG)basics.o

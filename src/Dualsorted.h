@@ -17,8 +17,8 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/string.hpp>
-#include "utils.cpp"
-#include "partialSums.cpp"
+#include "utils.h"
+#include "partialSums.h"
 
 //#include "delta.c"
 

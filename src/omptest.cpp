@@ -5,7 +5,7 @@
  *      Author: John
  */
 
-#include "Dualsorted.cpp"
+#include "Dualsorted.h"
 #include <queue>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>

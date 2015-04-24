@@ -1,38 +1,7 @@
 #ifndef _UTILS_CPP
 #define _UTILS_CPP
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <cstdlib>
-#include <sstream>
-#include <sys/types.h>
-#include <dirent.h>
-#include <string.h>
-#include <boost/date_time/gregorian/gregorian.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include "utils.h"
 
-using namespace std;
-using namespace boost::gregorian;
-using namespace boost::posix_time;
-template<class CL = microsec_clock>
-class MyTimer {
-private:
-	ptime m_startTime;
-	ptime m_endTime;
-public:
-	MyTimer() {
-		Restart();
-	}
-	void Restart() {
-		m_startTime = CL::local_time();
-	}
-
-	ptime Elapsed() {
-		m_endTime = CL::local_time();
-		cout << m_endTime - m_startTime << endl;
-	}
-};
 struct eqstr {
 	bool operator()(const char* s1, const char* s2) const {
 		return (s1 == s2) || (s1 && s2 && strcmp(s1, s2) == 0);
@@ -58,7 +27,7 @@ vector<string> getFiles(string dir) {
 }
 
 void Tokenize(const string& str, vector<string>& tokens,
-		const string& delimiters = " ") {
+		const string& delimiters) {
 	// Skip delimiters at beginning.
 	string::size_type lastPos = str.find_first_not_of(delimiters, 0);
 	// Find first "non-delimiter".
