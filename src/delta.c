@@ -1,4 +1,6 @@
- #include "delta.h"
+#ifndef _DELTA_C_
+#define _DELTA_C_
+#include "delta.h"
 /*
  * 计算floor(log2value)，也就是msb，默认value>0
  */
@@ -15,16 +17,16 @@ uint encodeGamma(uint* output, uint pos, uint value) {
 	uint l = logb2(value);
 	uint i;	
 	for(i = 0; i < l; i++) {
-		mybitclean(output,pos);
+		DSbitclean(output,pos);
 		pos++;
 	}
-	mybitset(output,pos);
+	DSbitset(output,pos);
 	pos++;
 	for(i = 0; i < l; i++) {
 		if(value & (1 << i))
-			mybitset(output,pos);
+			DSbitset(output,pos);
 		else
-			mybitclean(output,pos);
+			DSbitclean(output,pos);
 		pos++;
 	}
 	
@@ -35,13 +37,13 @@ uint decodeGamma(uint* input, uint pos, uint* value) {
 	uint nbits = 0;
 	uint lValue = 0;
 	register uint i;
-	while(!mybitget(input,pos)) {
+	while(!DSbitget(input,pos)) {
 		nbits++;
 		pos++;
 	}
 	pos++;
 	for(i = 0; i < nbits; i++) {
-		if(mybitget(input,pos))
+		if(DSbitget(input,pos))
 			lValue += 1 << i;
 		pos++;
 	}
@@ -151,9 +153,9 @@ uint encodeDelta(uint* output, uint pos, uint value) {
 	uint i;	
 	for(i = 0; i < l; i++) {
 		if(value & (1 << i))
-			mybitset(output,pos);
+			DSbitset(output,pos);
 		else 
-			mybitclean(output,pos);
+			DSbitclean(output,pos);
 		encodedBits++; 
 		pos++;
 	}
@@ -168,7 +170,7 @@ uint decodeDelta(uint* input, uint pos, uint* value) {
 	pos += decodedBits;
 	register uint i;
 	for(i = 0; i < nbits; i++) {
-		if(mybitget(input,pos)) lValue += (1 << i);
+		if(DSbitget(input,pos)) lValue += (1 << i);
 		pos++;
 	}
 	lValue |= (1 << nbits);
@@ -300,7 +302,7 @@ uint decodeDeltaEduPos(uint* input, uint pointer, uint* value) {
   //return pointer-pos;	  
   return pointer;
 }
-
+#endif
 
 
 

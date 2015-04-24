@@ -5,16 +5,16 @@ uint encode(uint* output, uint pos, uint value) {
 	uint l = logb2(value);
 	uint i;	
 	for(i = 0; i < l; i++) {
-		mybitclean(output,pos);
+		DSbitclean(output,pos);
 		pos++;
 	}
-	mybitset(output,pos);
+	DSbitset(output,pos);
 	pos++;
 	for(i = 0; i < l; i++) {
 		if(value & (1 << i))
-			mybitset(output,pos);
+			DSbitset(output,pos);
 		else
-			mybitclean(output,pos);
+			DSbitclean(output,pos);
 		pos++;
 	}
 	
@@ -25,13 +25,13 @@ uint decode(uint* input, uint pos, uint* value) {
 	uint nbits = 0;
 	uint lValue = 0;
 	register uint i;
-	while(!mybitget(input,pos)) {
+	while(!DSbitget(input,pos)) {
 		nbits++;
 		pos++;
 	}
 	pos++;
 	for(i = 0; i < nbits; i++) {
-		if(mybitget(input,pos))
+		if(DSbitget(input,pos))
 			lValue += 1 << i;
 		pos++;
 	}

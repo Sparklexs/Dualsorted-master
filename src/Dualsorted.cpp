@@ -1,10 +1,5 @@
 #include "Dualsorted.h"
 
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/string.hpp>
-
 using namespace cds_static;
 
 //a是有序字符串，二分查找字符s

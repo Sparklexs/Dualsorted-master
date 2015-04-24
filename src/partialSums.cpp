@@ -1,3 +1,5 @@
+#ifndef _PARTIALSUMS_CPP_
+#define _PARTIALSUMS_CPP_
 #include "delta.c"
 //#include "rice.h"
 #include <iostream>
@@ -394,4 +396,4 @@ void PStest() {
 		}
 	}
 }
-
+#endif

@@ -1,10 +1,11 @@
+#ifndef _DUALSORTED_H
+#define _DUALSORTED_H
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
 #include <cstdlib>
 #include <sstream>
-#include "utils.cpp"
 #include <algorithm>
 #include <google/sparse_hash_map>
 #include <WaveletTree.h>
@@ -12,6 +13,11 @@
 #include <Mapper.h>
 #include <BitSequenceRG.h>
 #include <BitString.h>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/string.hpp>
+#include "utils.cpp"
 #include "partialSums.cpp"
 
 //#include "delta.c"
@@ -92,3 +98,4 @@ public:
 
 	void DStest();
 };
+#endif

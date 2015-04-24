@@ -1,6 +1,5 @@
 
 // Basics
-
 #ifndef BASICSINCLUDED
 #define BASICSINCLUDED
 
@@ -59,16 +58,16 @@ void bitwrite(uint *e, uint p, uint len, uint s);
 //NOt WORKING UPON THE LIMIT OF THE STARTING uint.
 void bitzero(uint *e, uint p, uint len);
 // reads bit p from e
-#define mybitget(e,p) (((e)[(p)/myW] >> ((p)%myW)) & 1)
+#define DSbitget(e,p) (((e)[(p)/myW] >> ((p)%myW)) & 1)
 // sets bit p in e
-#define mybitset(e,p) ((e)[(p)/myW] |= (1<<((p)%myW)))
+#define DSbitset(e,p) ((e)[(p)/myW] |= (1<<((p)%myW)))
 // cleans bit p in e
-#define mybitclean(e,p) ((e)[(p)/myW] &= ~(1<<((p)%myW)))
+#define DSbitclean(e,p) ((e)[(p)/myW] &= ~(1<<((p)%myW)))
 
 /* bitRead and bitWrite as MACROS */
 // returns e[p..p+len-1], assuming len <= myW
-//mybitread (uint returned value, uint *e, uint p, uint len)
-#define mybitread(answ, v, p, len) \
+//DSbitread (uint returned value, uint *e, uint p, uint len)
+#define DSbitread(answ, v, p, len) \
    { uint *e ; \
    	 e=v;\
      e += p/myW; p %= myW; \

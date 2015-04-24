@@ -1,3 +1,5 @@
+#ifndef _DELTA_H_
+#define _DELTA_H_
 #include "basics.h"
 //#include "math_utils.h"
 //#include "basics.h"  // *basics.h* //
@@ -48,4 +50,4 @@ uint decodeDeltaEduPos(uint* input, uint pos, uint* value);
   code >>= 32-p; \
   pointer +=p; \
 }
-
+#endif
