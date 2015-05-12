@@ -21,6 +21,9 @@
 #include "partialSums.h"
 
 //#include "delta.c"
+/* 有两个需要说明的问题，st里面把第0个term开始的位置（即0）置1了
+ * 另外WM是从低位而不是高位开始判断的，因此叶子的顺序并不是自然数顺序
+ */
 
 using namespace std;
 using namespace cds_static;
@@ -32,7 +35,6 @@ private:
 	WaveletMatrix *L; //把所有term对应的docid倒排链链接而成
 	BitSequence *st; //term的docid链的bitmap连接图
 	CompressedPsums ** ps; //指向每个term对应的frequency倒排链
-	google::sparse_hash_map<string, uint> terms; //存储term及termID
 	//const char ** terms;
 	// Temporal use for construction
 	vector<int> freqs;
@@ -46,6 +48,7 @@ private:
 	int k;
 
 public:
+	google::sparse_hash_map<string, uint> terms; //存储term及termID
 	uint *doclens;
 	size_t ndocuments;
 	Dualsorted(vector<string> terms, vector<vector<int> > &result,
@@ -65,10 +68,11 @@ public:
 	void save();
 	static Dualsorted* load();
 	//根据输入的term和该term倒排链内的索引，获取给索引代表的docid
+	// 注意并没有考虑i越界的问题
 	uint getDocidOfPosting(string term, uint i);
 
 	//获取给定term在倒排链第i个doc中的频率
-	int getFreqOfPosting(const char*, int i);
+	int getFreqOfPosting(string term, int i);
 
 	//获取给定term的document frequency
 	uint getPostingSize(string term);
@@ -77,21 +81,21 @@ public:
 	vector<pair<uint, size_t> > mrqq(string term, size_t k, size_t kp);
 
 	//获取给定term对应的那部分倒排链中x到y，起点从0开始，所对应的docid
-	vector<uint> rangeFromTo(string t, size_t x, size_t y);
+	vector<uint> getRangeFromTo(string t, size_t x, size_t y);
 
 	// 应该是给定qsizes个查询词，得到其倒排链相交的结果
-	vector<uint> intersect(string *terms, uint qsizes);
+	vector<uint> getIntersection(string *terms, uint qsizes);
 
 	//返回给定term对应的倒排链从起始位置到i，起点从0开始，对应的docid序列
-	vector<uint> rangeTo(string term, uint i);
+	vector<uint> getRangeTo(string term, uint i);
 
 	// others
 
 	//获取在给定term对应的倒排链中，docid为d在其中的位置
-	int getPosOfDoc(string t, uint d);
+	int getPosOfDocid(string t, uint d);
 
 	//获取给定term对应的termID
-	uint getTermID(const char *t);
+	uint getTermID(string);
 
 	//获取当前DualSorted占用的内存大小（in B）
 	size_t getMemSize();

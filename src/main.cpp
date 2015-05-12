@@ -40,7 +40,7 @@ inline void executeAND(Dualsorted* ds, string ** terms, uint *qsizes,
 	for (uint i = 0; i < total_queries; i++) {
 		if (i % 100 == 0)
 			cout << " query = " << i << endl;
-		ds->intersect(terms[i], qsizes[i]);
+		ds->getIntersection(terms[i], qsizes[i]);
 	}
 	finish = clock();
 	time = (double(finish) - double(start)) / CLOCKS_PER_SEC;
@@ -61,7 +61,7 @@ inline void executeOR(Dualsorted* ds, string ** terms, uint *qsizes,
 			uint posting_size = ds->getPostingSize(terms[i][j].c_str());
 			cout << "term = " << terms[i][j] << endl;
 			cout << "posting_size = " << posting_size << endl;
-			vector<uint> results = ds->rangeTo(terms[i][j], posting_size);
+			vector<uint> results = ds->getRangeTo(terms[i][j], posting_size);
 			cout << "result_sisze =" << results.size() << endl;
 			for (uint x = 0; x < results.size(); x++) {
 
@@ -95,7 +95,7 @@ inline void executeANDPersin(Dualsorted* ds, string ** terms, uint *qsizes,
  }
  for (uint j = 1 ; j < qsizes[i]-1 ; j++)
  {
- ds->intersect(terms[i][j],terms[i][j-1]);
+ ds->getIntersection(terms[i][j],terms[i][j-1]);
  }
  }
  cout << total*0.20 << "," << ds->getMemSize() << endl;
@@ -126,7 +126,7 @@ inline void executePersin(Dualsorted* ds, string ** terms, uint *qsizes,
 			uint posting_size = ds->getPostingSize(terms[i][j].c_str());
 			if (posting_size < 2)
 				continue;
-			vector<uint> results = ds->rangeTo(terms[i][j], 20);
+			vector<uint> results = ds->getRangeTo(terms[i][j], 20);
 //		cout << "results.size() = " << results.size() << endl;
 			if (posting_size < results.size())
 				break;

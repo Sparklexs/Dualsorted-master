@@ -30,7 +30,7 @@ partialSums.o : $(SRC)partialSums.cpp $(SRC)delta.c
 	
 Dualsorted.o : $(SRC)Dualsorted.cpp $(SRC)Dualsorted.h $(SRC)partialSums.cpp
 	$(CPP) $(CPPFLAGS) $(INCLUDES) -c $(SRC)Dualsorted.cpp -o $(DEBUG)Dualsorted.o
-omptest.o : $(SRC)Dualsorted.cpp $(SRC)Dualsorted.h $(SRC)partialSums.cpp
+omptest.o : $(SRC)Dualsorted.cpp $(SRC)Dualsorted.h $(SRC)partialSums.cpp $(SRC)WeightingModels.h
 	$(CPP) $(CPPFLAGS) $(INCLUDES) -c $(SRC)omptest.cpp -o $(DEBUG)omptest.o
 #dslib: Dualsorted.o
 #	ar -rc $(DEBUG)Dualsorted.a $(DEBUG)Dualsorted.o $(LIB)

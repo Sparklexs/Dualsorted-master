@@ -40,7 +40,14 @@ public:
 		cout << m_endTime - m_startTime << endl;
 	}
 };
-
+// auxiliary functions
+inline int msb(uint v) {
+	int count = 0;
+	while (v >>= 1 & 1) {
+		count++;
+	}
+	return count;
+}
 vector<string> getFiles(string dir);
 
 void Tokenize(const string& str, vector<string>& tokens,

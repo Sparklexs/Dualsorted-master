@@ -73,12 +73,13 @@ private:
 	uint *a; //输入数组
 	uint *new_a; //去重后的输入数组
 
-	uint n; //输入数组长度
+	uint n; //输入数组长度，即term的document frequency
+	uint F_t; //表示所有数组值得和，collection frequency
 	uint new_n; //去重后的输入数组长度
 
 	uint k; //分块大小
 	uint *d; //存储压缩后的数组
-	uint size; //记录压缩后的uint数组bit长度
+	uint size; //记录压缩后的uint数组bit长度,并不准确，还有dup以及Psums没有考虑
 	uint *duplicate; //记录输入数组的重复值个数
 
 	encodef enc;
@@ -124,6 +125,7 @@ private:
 public:
 	CompressedPsums(uint *a, uint n, uint k, encodef enc, decodef dec) {
 		this->n = n;
+		this->F_t = a[0];
 		this->k = k;
 		this->a = a;
 		this->enc = enc;
@@ -144,6 +146,7 @@ public:
 		 */
 
 		for (uint i = 1; i < n; i++) {
+			F_t += a[i];
 			if (a[i - 1] == a[i]) {
 				repetitions++;
 				this->duplicate[i] = repetitions;
@@ -188,7 +191,7 @@ public:
 //		cout << "Done" << endl;
 	}
 	CompressedPsums() :
-			k(10), enc(encodeGamma), dec(decodeGamma) {
+			k(10), F_t(0), enc(encodeGamma), dec(decodeGamma) {
 	}
 
 	~CompressedPsums() {
@@ -214,17 +217,22 @@ public:
 #ifndef USE_BOOST_SERIALIZATION
 	void save(ofstream &of) const {
 		cds_utils::saveValue<uint>(of, n);
+		cds_utils::saveValue<uint>(of, F_t);
 		cds_utils::saveValue<uint>(of, k);
 		cds_utils::saveValue<uint>(of, size);
 		cds_utils::saveValue<uint>(of, d, size / NUM_SIZE);
 		cds_utils::saveValue<uint>(of, duplicate, n);
-		for (int i = 0; i < new_n / k + 1; i++)
+		// 注意这里，new_n在load时并没有载入，那么如果是load,save就会出问题
+		// 而buildSt,save则不会有问题
+		for (int i = 0; i < (n - duplicate[n - 1]) / k + 1; i++)
+//		for (int i = 0; i < new_n / k + 1; i++)
 			s[i]->save(of);
 	}
 
 	static CompressedPsums* load(ifstream &inf) {
 		CompressedPsums *cs = new CompressedPsums();
 		cs->n = cds_utils::loadValue<uint>(inf);
+		cs->F_t = cds_utils::loadValue<uint>(inf);
 		cs->k = cds_utils::loadValue<uint>(inf);
 		cs->size = cds_utils::loadValue<uint>(inf);
 		cs->d = cds_utils::loadValue<uint>(inf, cs->size / NUM_SIZE);
@@ -235,6 +243,11 @@ public:
 			cs->s[i] = Psums::load(inf);
 		cs->enc = encodeGamma;
 		cs->dec = decodeGamma;
+		/**
+		 * 恢复F_t
+		 */
+//		for (int i = 0; i < cs->n; i++)
+//			cs->F_t += cs->decode(i);
 		return cs;
 
 	}
@@ -242,9 +255,9 @@ public:
 	uint * encode() {
 		uint *b = new uint[this->new_n - 1];
 		for (int i = 0; i < new_n - 1; i++) {
-			//这里应该是反了
-			//int delta = this->new_a[i] - this->new_a[i + 1];
-			int delta = this->new_a[i + 1] - this->new_a[i];
+			//这里没有反，因为freq是降序排列
+			int delta = this->new_a[i] - this->new_a[i + 1];
+//			int delta = this->new_a[i + 1] - this->new_a[i];
 			b[i] = delta;
 //			cout << "delta [ " << i << "] " << b[i] << endl;
 		}
@@ -332,7 +345,7 @@ public:
 			real_pos += this->dec(this->d, real_pos, r);
 //			cout << "r[0]" << r[0] << endl;
 			i++;
-			real += r[0];
+			real -= r[0];
 		}
 		return real;
 	}
@@ -344,6 +357,6 @@ public:
 
 int msb(uint v);
 uint *sort(uint *a, uint n);
-void PStest() ;
+void PStest();
 
 #endif /* SRC_PARTIALSUMS_H_ */

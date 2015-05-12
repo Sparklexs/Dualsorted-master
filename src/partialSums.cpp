@@ -2,15 +2,6 @@
 #define _PARTIALSUMS_CPP_
 #include "partialSums.h"
 
-// auxiliary functions
-int msb(uint v) {
-	int count = 0;
-	while (v >>= 1 & 1) {
-		count++;
-	}
-	return count;
-}
-
 uint *sort(uint *a, uint n) {
 	for (int i = 0; i < n; i++) {
 		for (int j = 0; j < n; j++) {

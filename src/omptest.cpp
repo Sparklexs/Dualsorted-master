@@ -6,6 +6,7 @@
  */
 
 #include "Dualsorted.h"
+#include "WeightingModels.h"
 #include <queue>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
@@ -20,11 +21,17 @@
 using namespace std;
 void save(vector<string> words, vector<vector<int> > result, vector<int> freqs,
 		uint *doclens, size_t ndocuments);
-Dualsorted* ReadFiles(char** argv) {
-	const char* invlist = argv[1];
-	const char* invlistfreq = argv[2];
-	const char* vocab = argv[3];
-	const char* doclens_file = argv[4];
+void saveForGOV2(vector<string> words, vector<vector<int> > result,
+		vector<int> freqs, uint *doclens, size_t ndocuments);
+Dualsorted* ReadFiles(char* filePrefix) {
+	string invlist(filePrefix);
+	invlist.append(".invlist");
+	string invlistfreq = string(filePrefix);
+	invlistfreq.append(".invlistfreq");
+	string vocab = string(filePrefix);
+	vocab.append(".words");
+	string doclens_file = string(filePrefix);
+	doclens_file.append(".doclength");
 
 	string line;
 
@@ -139,6 +146,39 @@ void save(vector<string> words, vector<vector<int> > result, vector<int> freqs,
 
 }
 
+void saveForGOV2(vector<string> words, vector<vector<int> > result,
+		vector<int> freqs, uint *doclens, size_t ndocuments) {
+	MyTimer<microsec_clock> t;
+	vector<uint> vdoclens(doclens, doclens + ndocuments);
+
+//binary使用时间
+
+	t.Restart();
+
+	cout << "result!";
+	std::ofstream file("./serialization/result.dat");
+	boost::archive::binary_oarchive bina(file);
+	bina & BOOST_SERIALIZATION_NVP(result);
+
+	cout << "words!";
+	std::ofstream file1("./serialization/words.dat");
+	boost::archive::binary_oarchive bina1(file1);
+	bina1 & BOOST_SERIALIZATION_NVP(words);
+
+	cout << "doclens!";
+	std::ofstream file2("./serialization/doclens.dat");
+	boost::archive::binary_oarchive bina2(file2);
+	bina2 & BOOST_SERIALIZATION_NVP(vdoclens);
+
+	cout << "freqs!";
+	std::ofstream file3("./serialization/freqs.txt");
+	boost::archive::text_oarchive bina3(file3);
+	bina3 & BOOST_SERIALIZATION_NVP(vdoclens);
+
+	cout << "bin序列化时间: ";
+	t.Elapsed();
+}
+
 Dualsorted* load() {
 	MyTimer<microsec_clock> t;
 	cout << "bin反序列化时间: ";
@@ -229,7 +269,7 @@ inline void executeAND(Dualsorted* ds, string ** terms, uint *qsizes,
 	for (uint i = 0; i < total_queries; i++) {
 		if (i % 100 == 0)
 			cout << " query = " << i << endl;
-		ds->intersect(terms[i], qsizes[i]);
+		ds->getIntersection(terms[i], qsizes[i]);
 	}
 	finish = clock();
 	time = (double(finish) - double(start)) / CLOCKS_PER_SEC;
@@ -253,7 +293,7 @@ inline void executeOR(Dualsorted* ds, string ** terms, uint *qsizes,
 			uint posting_size = ds->getPostingSize(terms[i][j].c_str());
 			cout << "term = " << terms[i][j] << endl;
 			cout << "posting_size = " << posting_size << endl;
-			vector<uint> results = ds->rangeTo(terms[i][j], posting_size);
+			vector<uint> results = ds->getRangeTo(terms[i][j], posting_size);
 			cout << "result_sisze =" << results.size() << endl;
 			for (uint x = 0; x < results.size(); x++) {
 				total_results++;
@@ -292,7 +332,8 @@ inline void executePersin(Dualsorted* ds, string ** terms, uint *qsizes,
 			uint posting_size = ds->getPostingSize(terms[i][j].c_str());
 			if (posting_size < 2)
 				continue;
-			vector<uint> results = ds->rangeTo(terms[i][j], 20);
+			// 获取该倒排链前20个docid，如果不足20个那么结束
+			vector<uint> results = ds->getRangeTo(terms[i][j], 20);
 //		cout << "results.size() = " << results.size() << endl;
 			if (posting_size < results.size())
 				break;
@@ -355,11 +396,10 @@ inline void executePersin(Dualsorted* ds, string ** terms, uint *qsizes,
 }
 
 //第一次调用时使用的方法，生成archive文件，之后就可以直接调用load加快速度
-void executeQueries(Dualsorted* ds, const char* queries, int query_type) {
-
-	int top_k = 10;
-	ifstream qfile;
-	qfile.open(queries);
+void executeQueries(Dualsorted* ds, char* filePrefix, int query_type) {
+	string queries(filePrefix);
+	queries.append(".query");
+	ifstream qfile(queries);
 	string filter = " (),:.;\t\"\'!?-_\0\n[]=#{}";
 	string str;
 	getline(qfile, str);
@@ -383,12 +423,16 @@ void executeQueries(Dualsorted* ds, const char* queries, int query_type) {
 		}
 		i++;
 	}
-//	for (int i = 0; i < total_queries; i++) {
+//		for (int i = 0; i < total_queries; i++) {
 //		cout << "query " << i;
 //		for (int j = 0; j < qsize[i]; j++)
 //			cout << " " << qterms[i][j].c_str();
 //		cout << endl;
 //	}
+	// total_queries是查询的总数，qsize是存储每个查询长度的数组，
+	// qterms存储每个查询的查询词
+	int top_k = 10;
+	executePersin(ds, qterms, qsize, top_k, total_queries);
 	executeAND(ds, qterms, qsize, total_queries);
 //	if (query_type == 1)
 //		executeOR(ds, qterms, qsize, total_queries);
@@ -417,6 +461,7 @@ int main(int argc, char** argv) {
 //测试DualSorted类
 	//关于读取Dualsorted，如果已经save过，优先读取save的，否则查看
 	//是否把vector已经save过了，否则最后才从原始文件一步步初始化
+
 	Dualsorted* ds;
 	ifstream ifwm("./serialization/wm.dat");
 	if (ifwm.good())
@@ -426,11 +471,30 @@ int main(int argc, char** argv) {
 		if (ifvec.good())
 			ds = load();
 		else
-			ds = ReadFiles(argv);
+			ds = ReadFiles(argv[1]);
 		ds->save();
 	}
-	// 读取查询词
-	executeQueries(ds, argv[5], 0);
+//	executeQueries(ds, argv[1], 0);
+	Early_Termination::BM25 *bm25 = new Early_Termination::BM25(argv[1]);
+	google::sparse_hash_map<string, uint>::iterator it = ds->terms.begin();
+	for (; it != ds->terms.end(); it++) {
+		cout << (*it).second << " " << (*it).first << ":"
+				<< ds->getPostingSize((*it).first) << endl;
+		uint length = ds->getPostingSize((*it).first);
+		double maxscore = DBL_MIN;
+		for (int i = 0; i < length; ++i) {
+			double score = bm25->score(ds->getFreqOfPosting((*it).first, i),
+					ds->doclens[ds->getDocidOfPosting((*it).first, i)], 1.0,
+					length);
+			cout << "(" << i << ")" << score << endl;
+			if (score > maxscore)
+				maxscore = score;
+		}
+		cout << "!!!maxscore:" << maxscore << endl;
+	}
+
+// 读取查询词
+//	executeQueries(ds, argv[1], 0);
 
 	ds->DStest();
 
